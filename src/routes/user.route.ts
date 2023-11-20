@@ -4,6 +4,6 @@ import { validatorResult } from "../middlewares/validator/validatorResult.middle
 
 const router = express.Router()
 
-router.post("/register", registerValidator, validatorResult);
+router.post("/register", registerValidator, validatorResult)
 
 export default router
