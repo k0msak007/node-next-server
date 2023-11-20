@@ -40,12 +40,9 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
   "lint-staged": {
-    "*.ts": ["npm run lint"]
+    "*.ts": [
+      "npm run lint"
+    ]
   }
 }
