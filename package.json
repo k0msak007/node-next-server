@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "jest",
     "lint": "eslint .",
-    "lint-staged": "lint-staged"
+    "precommit": "npm run lint-staged"
   },
   "husky": {
     "hooks": {
@@ -16,7 +16,7 @@
     }
   },
   "lint-staged": {
-    "*.ts": ["eslint"]
+    "*.ts": ["npm run lint"]
   },
   "keywords": [],
   "author": "",
