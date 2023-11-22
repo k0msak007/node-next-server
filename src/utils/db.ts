@@ -3,9 +3,7 @@ import sql, { ConnectionPool } from 'mssql';
 let connection: ConnectionPool | null = null;
 
 export const sqlConnection = async () => {
-  if (!connection) {
-    console.log(connection);
-    
+  if (!connection) {    
     const sqlConfig = {
       user: "sa",
       password: "Komsak007.lert",
