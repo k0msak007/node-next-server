@@ -1,7 +1,10 @@
 import express, { NextFunction, Request, Response } from "express";
 import morgan from "morgan";
+import cookieParser from "cookie-parser"
 import cors from "cors";
+import dotenv from "dotenv"
 import userRouter from "./routes/user.route";
+dotenv.config()
 
 export const createApp = () => {
   const app = express();
@@ -9,6 +12,7 @@ export const createApp = () => {
   app.use(express.json());
   app.use(morgan("dev"));
   app.use(cors());
+  app.use(cookieParser())
 
   app.use("/api/user", userRouter);
 
