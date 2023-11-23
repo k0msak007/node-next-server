@@ -277,3 +277,18 @@ export const RefreshToken = async (
     next(ErrorHandler(error.message, 500));
   }
 };
+
+export const Logout = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.cookie("access_token", "", {maxAge: 1})
+    res.cookie("refresh_token", "", {maxAge: 1})
+
+    res.json({
+      success: true,
+      message: "Logged Successfully"
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    next(ErrorHandler(error.message, 500));
+  }
+}
