@@ -3,9 +3,11 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { ErrorHandler } from "../utils/errorHandler";
 import { sqlConnection } from "../utils/db";
 import {
+  changePassword,
   createActivationToken,
   existAccount,
   getUserFromToken,
+  getUserFromUserId,
   insertNewUser,
   loginUser,
 } from "../services/user.service";
@@ -15,6 +17,7 @@ import {
   refreshTokenOptions,
   sendToken,
 } from "../utils/jwt";
+import { comparePassword, hashingPassword } from "../utils/password";
 
 export const Register = async (
   req: Request,
@@ -262,7 +265,7 @@ export const RefreshToken = async (
       }
     );
 
-    req.user = userData
+    req.user = userData;
 
     res.cookie("access_token", accessToken, accessTokenOptions);
     res.cookie("refresh_token", refreshToken, refreshTokenOptions);
@@ -280,15 +283,57 @@ export const RefreshToken = async (
 
 export const Logout = (req: Request, res: Response, next: NextFunction) => {
   try {
-    res.cookie("access_token", "", {maxAge: 1})
-    res.cookie("refresh_token", "", {maxAge: 1})
+    res.cookie("access_token", "", { maxAge: 1 });
+    res.cookie("refresh_token", "", { maxAge: 1 });
 
     res.json({
       success: true,
-      message: "Logged Successfully"
-    })
+      message: "Logged Successfully",
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     next(ErrorHandler(error.message, 500));
   }
-}
+};
+
+export const ChangePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user } = req;
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  const sql = await sqlConnection();
+  const pool = sql.request();
+
+  if (!user) {
+    return next(ErrorHandler("User not found, Please Log in again!", 404))
+  }
+
+  const userData = await getUserFromUserId(user.UserID, pool);
+  if(!userData) {
+    return next(ErrorHandler("User not found, Please Log in again!", 404))
+  }
+
+  const isMatchPassword = await comparePassword(oldPassword, userData.PasswordHash)
+  if(!isMatchPassword) {
+    return next(ErrorHandler("Password is invalid", 400))
+  }
+
+  if(newPassword !== confirmPassword) {
+    return next(ErrorHandler("New password and Confirm password not match", 400))
+  }
+
+  const passwordHash = await hashingPassword(newPassword)
+  const isUpdate = await changePassword(userData.UserID, passwordHash, pool)
+
+  if(isUpdate) {
+    return res.status(200).json({
+      success: true,
+      message: "Change password successfully"
+    })
+  } else {
+    return next(ErrorHandler("Change password failed", 400))
+  }
+
+};

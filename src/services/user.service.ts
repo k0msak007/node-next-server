@@ -166,3 +166,39 @@ export const getUserFromToken = async (userId: string, pool: Request) => {
 
   return userData.recordset[0];
 };
+
+export const getUserFromUserId = async (userId: string, pool: Request) => {
+  const query = `
+    SELECT * FROM Users WHERE UserID = @userId
+  `;
+
+  pool.input("userId", userId);
+
+  const userData = await pool.query(query);
+
+  if (userData.recordset.length < 1) {
+    return null;
+  }
+
+  return userData.recordset[0];
+};
+
+export const changePassword = async (userId: string, password: string, pool: Request) => {
+  try {
+    const query = `
+      UPDATE Users SET
+      PasswordHash = @passwordHash
+      WHERE UserId = @userIdMatch
+    `;
+  
+    pool.input("userIdMatch", userId);
+    pool.input("passwordHash", password);
+  
+    await pool.query(query);
+  
+    return true
+  } catch (error) {
+    console.error('Error executing query:', error);
+    return false;
+  }
+};
