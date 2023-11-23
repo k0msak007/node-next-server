@@ -1,15 +1,20 @@
 import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { ErrorHandler } from "../utils/errorHandler";
 import { sqlConnection } from "../utils/db";
 import {
   createActivationToken,
   existAccount,
+  getUserFromToken,
   insertNewUser,
   loginUser,
 } from "../services/user.service";
 import sendMail from "../utils/sendMail";
-import { sendToken } from "../utils/jwt";
+import {
+  accessTokenOptions,
+  refreshTokenOptions,
+  sendToken,
+} from "../utils/jwt";
 
 export const Register = async (
   req: Request,
@@ -202,6 +207,71 @@ export const UserDetail = (req: Request, res: Response, next: NextFunction) => {
       access_token: req.cookies.access_token,
       refresh: req.cookies.refresh_token,
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    next(ErrorHandler(error.message, 500));
+  }
+};
+
+export const RefreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const refresh_Token = req.cookies.refresh_token;
+    const sql = await sqlConnection();
+    const pool = sql.request();
+
+    // verift token
+    const decoded = jwt.verify(
+      refresh_Token,
+      process.env.REFRESH_TOKEN as string
+    ) as JwtPayload;
+
+    const message = "Could not refresh token";
+    if (!decoded) {
+      return next(ErrorHandler(message, 400));
+    }
+
+    // get user detail
+    const userData = await getUserFromToken(decoded.id, pool);
+
+    if (!userData) {
+      return next(ErrorHandler("Invalid data from token"));
+    }
+
+    const accessToken = jwt.sign(
+      { id: userData.UserID },
+      process.env.ACCESS_TOKEN as string,
+      {
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRE + "m",
+      }
+    );
+
+    const now = Math.floor(Date.now() / 1000);
+    const expiresIn = decoded.exp
+      ? decoded.exp - now
+      : process.env.REFRESH_TOKEN_EXPIRE + "d";
+
+    const refreshToken = jwt.sign(
+      { id: userData.UserID },
+      process.env.REFRESH_TOKEN as string,
+      {
+        expiresIn: expiresIn,
+      }
+    );
+
+    req.user = userData
+
+    res.cookie("access_token", accessToken, accessTokenOptions);
+    res.cookie("refresh_token", refreshToken, refreshTokenOptions);
+
+    res.status(200).json({
+      status: "success",
+      accessToken,
+    });
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     next(ErrorHandler(error.message, 500));

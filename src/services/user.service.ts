@@ -3,10 +3,7 @@ import { ILogin, IRegister } from "../interface/user.type";
 import { comparePassword, hashingPassword } from "../utils/password";
 import { signActivationToken } from "../utils/jwt";
 
-export const existAccount = async (
-  data: IRegister,
-  pool: Request,
-) => {
+export const existAccount = async (data: IRegister, pool: Request) => {
   const { username, email } = data;
 
   const checkUsernameQuery = `SELECT * FROM USERS WHERE Username = @chkUsername OR Email = @chkEmail`;
@@ -19,10 +16,10 @@ export const existAccount = async (
   console.log(existUser);
 
   if (existUser.recordset.length > 0) {
-    return true
+    return true;
   }
 
-  return false
+  return false;
 };
 
 export const insertNewUser = async (data: IRegister, pool: Request) => {
@@ -112,45 +109,60 @@ export const createActivationToken = async (
 };
 
 export const loginUser = async (data: ILogin, pool: Request) => {
-    const {username, email, password} = data
+  const { username, email, password } = data;
 
-    // Find Username or Email
-    const loginQuery = `
+  // Find Username or Email
+  const loginQuery = `
         SELECT * FROM Users
         WHERE Username = @username OR Email = @email
-    `
+    `;
 
-    pool.input("username", username)
-    pool.input("email", email)
+  pool.input("username", username);
+  pool.input("email", email);
 
-    const userLogin = await pool.query(loginQuery)
-    if(userLogin.recordset.length < 1) {
-        return null
-    }
-    
-    // Compare Password from store
-    const userLoginData = userLogin.recordset[0]
-    const isComparePassword = await comparePassword(password, userLoginData.PasswordHash)
-    if(!isComparePassword) {
-        return null
-    }
+  const userLogin = await pool.query(loginQuery);
+  if (userLogin.recordset.length < 1) {
+    return null;
+  }
 
-    // Check Validate Account
-    if(userLoginData.Email_Verified) {
-        return {
-            isActive: true,
-            userId: userLoginData.UserID,
-            email: userLoginData.Email
-        }
-    } else {
-        return {
-            isActive: false,
-            userId: userLoginData.UserID,
-            email: userLoginData.Email
-        }
-    }
-}
+  // Compare Password from store
+  const userLoginData = userLogin.recordset[0];
+  const isComparePassword = await comparePassword(
+    password,
+    userLoginData.PasswordHash
+  );
+  if (!isComparePassword) {
+    return null;
+  }
 
-export const refreshToken = () => {
+  // Check Validate Account
+  if (userLoginData.Email_Verified) {
+    return {
+      isActive: true,
+      userId: userLoginData.UserID,
+      email: userLoginData.Email,
+    };
+  } else {
+    return {
+      isActive: false,
+      userId: userLoginData.UserID,
+      email: userLoginData.Email,
+    };
+  }
+};
 
-}
+export const getUserFromToken = async (userId: string, pool: Request) => {
+  const query = `
+    SELECT UserID, Username, Email, FirstName, LastName, Role FROM Users WHERE UserID = @userId
+  `;
+
+  pool.input("userId", userId);
+
+  const userData = await pool.query(query);
+
+  if (userData.recordset.length < 1) {
+    return null;
+  }
+
+  return userData.recordset[0];
+};
