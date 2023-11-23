@@ -13,7 +13,7 @@ export interface IRegister extends ILogin {
 
 // RESPONSE
 export interface IUser {
-    UserID: number,
+    UserID: string,
     Username: string,
     Email: string,
     FirstName: string,
