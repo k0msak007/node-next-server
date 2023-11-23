@@ -180,9 +180,9 @@ export const Login = async (
         success: true,
         message: "Login Success",
         data: {
-            isActive
-        }
-      })
+          isActive,
+        },
+      });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -192,13 +192,18 @@ export const Login = async (
 };
 
 export const UserDetail = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        res.json({
-            access_token: req.cookies.access_token,
-            refresh: req.cookies.refresh_token,
-        })
+  try {
+    const { user } = req;
+
+    console.log(user);
+
+    res.json({
+      user,
+      access_token: req.cookies.access_token,
+      refresh: req.cookies.refresh_token,
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     next(ErrorHandler(error.message, 500));
   }
-}
+};
