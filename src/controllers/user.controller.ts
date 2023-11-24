@@ -203,12 +203,12 @@ export const UserDetail = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = req;
 
-    console.log(user);
-
-    res.json({
-      user,
-      access_token: req.cookies.access_token,
-      refresh: req.cookies.refresh_token,
+    return res.status(200).json({
+      success: true,
+      message: "Fetch user success",
+      data: {
+        user,
+      },
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
@@ -307,33 +307,37 @@ export const ChangePassword = async (
   const pool = sql.request();
 
   if (!user) {
-    return next(ErrorHandler("User not found, Please Log in again!", 404))
+    return next(ErrorHandler("User not found, Please Log in again!", 404));
   }
 
   const userData = await getUserFromUserId(user.UserID, pool);
-  if(!userData) {
-    return next(ErrorHandler("User not found, Please Log in again!", 404))
+  if (!userData) {
+    return next(ErrorHandler("User not found, Please Log in again!", 404));
   }
 
-  const isMatchPassword = await comparePassword(oldPassword, userData.PasswordHash)
-  if(!isMatchPassword) {
-    return next(ErrorHandler("Password is invalid", 400))
+  const isMatchPassword = await comparePassword(
+    oldPassword,
+    userData.PasswordHash
+  );
+  if (!isMatchPassword) {
+    return next(ErrorHandler("Password is invalid", 400));
   }
 
-  if(newPassword !== confirmPassword) {
-    return next(ErrorHandler("New password and Confirm password not match", 400))
+  if (newPassword !== confirmPassword) {
+    return next(
+      ErrorHandler("New password and Confirm password not match", 400)
+    );
   }
 
-  const passwordHash = await hashingPassword(newPassword)
-  const isUpdate = await changePassword(userData.UserID, passwordHash, pool)
+  const passwordHash = await hashingPassword(newPassword);
+  const isUpdate = await changePassword(userData.UserID, passwordHash, pool);
 
-  if(isUpdate) {
+  if (isUpdate) {
     return res.status(200).json({
       success: true,
-      message: "Change password successfully"
-    })
+      message: "Change password successfully",
+    });
   } else {
-    return next(ErrorHandler("Change password failed", 400))
+    return next(ErrorHandler("Change password failed", 400));
   }
-
 };
