@@ -6,6 +6,7 @@ import {
   changePassword,
   createActivationToken,
   existAccount,
+  getAllUsers,
   getUserFromToken,
   getUserFromUserId,
   insertNewUser,
@@ -301,43 +302,69 @@ export const ChangePassword = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { user } = req;
-  const { oldPassword, newPassword, confirmPassword } = req.body;
-  const sql = await sqlConnection();
-  const pool = sql.request();
+  try {
+    const { user } = req;
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const sql = await sqlConnection();
+    const pool = sql.request();
 
-  if (!user) {
-    return next(ErrorHandler("User not found, Please Log in again!", 404));
-  }
+    if (!user) {
+      return next(ErrorHandler("User not found, Please Log in again!", 404));
+    }
 
-  const userData = await getUserFromUserId(user.UserID, pool);
-  if (!userData) {
-    return next(ErrorHandler("User not found, Please Log in again!", 404));
-  }
+    const userData = await getUserFromUserId(user.UserID, pool);
+    if (!userData) {
+      return next(ErrorHandler("User not found, Please Log in again!", 404));
+    }
 
-  const isMatchPassword = await comparePassword(
-    oldPassword,
-    userData.PasswordHash
-  );
-  if (!isMatchPassword) {
-    return next(ErrorHandler("Password is invalid", 400));
-  }
-
-  if (newPassword !== confirmPassword) {
-    return next(
-      ErrorHandler("New password and Confirm password not match", 400)
+    const isMatchPassword = await comparePassword(
+      oldPassword,
+      userData.PasswordHash
     );
+    if (!isMatchPassword) {
+      return next(ErrorHandler("Password is invalid", 400));
+    }
+
+    if (newPassword !== confirmPassword) {
+      return next(
+        ErrorHandler("New password and Confirm password not match", 400)
+      );
+    }
+
+    const passwordHash = await hashingPassword(newPassword);
+    const isUpdate = await changePassword(userData.UserID, passwordHash, pool);
+
+    if (isUpdate) {
+      return res.status(200).json({
+        success: true,
+        message: "Change password successfully",
+      });
+    } else {
+      return next(ErrorHandler("Change password failed", 400));
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    next(ErrorHandler(error.message, 500));
   }
+};
 
-  const passwordHash = await hashingPassword(newPassword);
-  const isUpdate = await changePassword(userData.UserID, passwordHash, pool);
+// get all user -- only admin
+export const GetAllUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sql = await sqlConnection();
+    const pool = sql.request();
 
-  if (isUpdate) {
+    const users = await getAllUsers(pool)
+
     return res.status(200).json({
       success: true,
-      message: "Change password successfully",
-    });
-  } else {
-    return next(ErrorHandler("Change password failed", 400));
-  }
+      message: "Fetch all user success",
+      data: {
+        users
+      }
+    })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+} catch (error: any) {
+  next(ErrorHandler(error.message, 500));
+}
 };

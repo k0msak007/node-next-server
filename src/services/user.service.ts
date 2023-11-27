@@ -202,3 +202,13 @@ export const changePassword = async (userId: string, password: string, pool: Req
     return false;
   }
 };
+
+export const getAllUsers = async (pool: Request) => {
+  const query = `
+      SELECT UserID, Username, Email, FirstName, LastName, Role FROM Users WHERE Role <> 'admin'
+    `;
+
+    const users = await pool.query(query);
+
+    return users.recordset
+}
