@@ -5,6 +5,7 @@ import { sqlConnection } from "../utils/db";
 import {
   changePassword,
   createActivationToken,
+  editUserRole,
   existAccount,
   getAllUsers,
   getUserFromToken,
@@ -349,22 +350,50 @@ export const ChangePassword = async (
 };
 
 // get all user -- only admin
-export const GetAllUser = async (req: Request, res: Response, next: NextFunction) => {
+export const GetAllUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const sql = await sqlConnection();
     const pool = sql.request();
 
-    const users = await getAllUsers(pool)
+    const users = await getAllUsers(pool);
 
     return res.status(200).json({
       success: true,
       message: "Fetch all user success",
       data: {
-        users
+        users,
+      },
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    next(ErrorHandler(error.message, 500));
+  }
+};
+
+// Edit role user -- only admin
+export const EditRoleUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {userId, role} = req.body
+    const sql = await sqlConnection();
+    const pool = sql.request();
+
+    const userIdOutput = await editUserRole(userId, role, pool)
+    // console.log(userIdOutput);
+
+    res.status(200).json({
+      success: true,
+      message: "Update user role successfully",
+      data: {
+        userId: userIdOutput
       }
     })
+    
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-} catch (error: any) {
-  next(ErrorHandler(error.message, 500));
+  } catch (error: any) {
+    next(ErrorHandler(error.message, 500));
+  }
 }
-};

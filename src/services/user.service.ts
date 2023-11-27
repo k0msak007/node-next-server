@@ -212,3 +212,18 @@ export const getAllUsers = async (pool: Request) => {
 
     return users.recordset
 }
+
+export const editUserRole = async (userId: string, role: string, pool: Request) => {
+  const query = `
+      UPDATE Users SET
+      Role = @role
+      OUTPUT INSERTED.UserID, INSERTED.FirstName, INSERTED.LastName, INSERTED.Email
+      WHERE UserID = @userId
+    `;
+
+    pool.input('userId', userId)
+    pool.input('role', role)
+    const users = await pool.query(query);
+
+    return users.recordset
+}
